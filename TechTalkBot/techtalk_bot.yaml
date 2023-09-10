@@ -1,0 +1,36 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: TechTalkBot
+  labels:
+    app: TechTalkBot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: TechTalkBot
+  template:
+    metadata:
+      name: TechTalkBot
+      labels:
+        app: TechTalkBot
+    spec:
+      containers:
+        - name: TechTalkBot
+          image: dantesfoncake/techtalk_bot
+          imagePullPolicy: Never
+          env:
+            - name: DOTNET__TelegramToken
+              valueFrom:
+                secretKeyRef:
+                  name: telegram
+                  key: bot_token
+            - name: PostgresPassword
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-main-postgresql
+                  key: password
+            - name: DOTNET__ConnectionStrings__Npsql
+              value: "User ID=techtalk_db;Password=$(PostgresPassword);Host=postgres-main-postgresql.default.svc.cluster.local;Port=5432;Database=techtalk_db"
+      restartPolicy: Always
+      
