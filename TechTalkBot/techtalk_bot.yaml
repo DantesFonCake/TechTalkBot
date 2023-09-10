@@ -1,22 +1,22 @@
 ﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: TechTalkBot
+  name: techtalk-bot
   labels:
-    app: TechTalkBot
+    app: techtalk-bot
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: TechTalkBot
+      app: techtalk-bot
   template:
     metadata:
-      name: TechTalkBot
+      name: techtalk-bot
       labels:
-        app: TechTalkBot
+        app: techtalk-bot
     spec:
       containers:
-        - name: TechTalkBot
+        - name: techtalk-bot
           image: dantesfoncake/techtalk_bot
           imagePullPolicy: Never
           env:
