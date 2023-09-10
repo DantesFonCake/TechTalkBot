@@ -3,9 +3,9 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY ["TechTalkBot/TechTalkBot.csproj", "TechTalkBot/"]
+COPY ["TechTalkBot.csproj", "TechTalkBot/"]
 RUN dotnet restore "TechTalkBot/TechTalkBot.csproj"
-COPY . .
+COPY . TechTalkBot
 WORKDIR "/src/TechTalkBot"
 RUN dotnet build "TechTalkBot.csproj" -c Release -o /app/build
 
