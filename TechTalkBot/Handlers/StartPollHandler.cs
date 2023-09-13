@@ -56,7 +56,7 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
 
 
         var message = await bot.SendPollAsync(request.ChatId, "Что смотрим в следующий раз?",
-            videos.Select(CreateOption), replyToMessageId: request.MessageId, cancellationToken: cancellationToken);
+            videos.Select(CreateOption), replyToMessageId: request.MessageId, allowsMultipleAnswers:true, isAnonymous:false, cancellationToken: cancellationToken);
         var poll = new Poll
         {
             Id = message.MessageId,
