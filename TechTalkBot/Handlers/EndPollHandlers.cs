@@ -21,6 +21,7 @@ public sealed class EndPollHandlers : IRequestHandler<EndPollRequest>
     public async Task Handle(EndPollRequest request, CancellationToken cancellationToken)
     {
         var chatState = await dbContext.Chats.Include(chat => chat.ActivePoll)
+            .ThenInclude(static poll => poll!.Options)
             .FirstOrDefaultAsync(chat => chat.Id == request.ChatId, cancellationToken);
         if (chatState is not { ActivePoll: { } poll })
         {
