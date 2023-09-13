@@ -98,26 +98,13 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
     {
         var idxPrefix = $"{idx + 1}. ";
         var urlSuffix = $" - {video.Url}";
-        var suffixLength = Encoding.UTF8.GetByteCount(urlSuffix);
         if (urlSuffix.Length > 50)
         {
             urlSuffix = "";
-            suffixLength = 0;
         }
 
-        var leftSpace = 100 - Encoding.UTF8.GetByteCount(idxPrefix) - suffixLength;
-        var name = MakeFitInSpace(video.Name, leftSpace);
+        var leftSpace = 99 - idxPrefix.Length - urlSuffix.Length;
+        var name = video.Name[..Math.Min(leftSpace, video.Name.Length)];
         return $"{idxPrefix}{name}{urlSuffix}";
-    }
-
-    private static string MakeFitInSpace(string videoName, int leftSpace)
-    {
-        var videoSpan = videoName.AsSpan();
-        while (leftSpace < Encoding.UTF8.GetByteCount(videoSpan))
-        {
-            videoSpan = videoSpan[..^1];
-        }
-
-        return videoSpan.ToString();
     }
 }
