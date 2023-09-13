@@ -97,18 +97,12 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
     private static string CreateOption(Video video, int idx)
     {
         var idxPrefix = $"{idx + 1}. ";
-        var urlSuffix = $" - {video.Url}";
-        if (urlSuffix.Length > 50)
-        {
-            urlSuffix = "";
-        }
-
-        var leftSpace = 99 - idxPrefix.Length - urlSuffix.Length;
+        var leftSpace = 99 - idxPrefix.Length;
         var name = video.Name;
         if (leftSpace < name.Length)
         {
             name = $"{name[..(leftSpace - 3)]}...";
         }
-        return $"{idxPrefix}{name}{urlSuffix}";
+        return $"{idxPrefix}{name}";
     }
 }
