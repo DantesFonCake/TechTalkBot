@@ -32,6 +32,7 @@ public sealed class EndPollHandler : IRequestHandler<EndPollRequest>
         {
             await bot.SendTextMessageAsync(request.ChatId,
                 "В чате не начато голосование. Перед тем как его закончить надо его начать",
+                replyToMessageId: request.MessageId,
                 cancellationToken: cancellationToken);
             return;
         }
@@ -56,7 +57,7 @@ public sealed class EndPollHandler : IRequestHandler<EndPollRequest>
         var winnerVideo = poll.Options[videoOptionId];
 
         await bot.SendTextMessageAsync(request.ChatId, CreateWinnerVideo(winnerVideo), replyToMessageId: poll.Id,
-            parseMode: ParseMode.MarkdownV2,
+            parseMode: ParseMode.Html,
             cancellationToken: cancellationToken);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -82,7 +83,7 @@ public sealed class EndPollHandler : IRequestHandler<EndPollRequest>
         return null;
     }
 
-    private string CreateWinnerVideo(Video video) => $"В этот раз смотрим [{video.Name}]({video.Url})";
+    private string CreateWinnerVideo(Video video) => $"В этот раз смотрим <a href=\"{video.Url}\">{video.Name}</a>";
 
     private static int ExtractOptionId(string text)
     {
