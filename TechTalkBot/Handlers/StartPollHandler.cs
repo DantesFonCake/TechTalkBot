@@ -22,7 +22,6 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
 
     public async Task Handle(StartPollRequest request, CancellationToken cancellationToken)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var chatState = await GetOrCreateChat(request, cancellationToken);
         if (chatState is { ActivePoll: not null })
         {
@@ -65,6 +64,7 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
             Options = videos,
         };
 
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         await dbContext.AddAsync(poll, cancellationToken);
         chatState.ActivePoll = poll;
         foreach (var video in videos)
@@ -88,6 +88,7 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
             };
 
             await dbContext.Chats.AddAsync(chatState, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         return chatState;
