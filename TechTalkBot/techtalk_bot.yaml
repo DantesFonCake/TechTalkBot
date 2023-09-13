@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: techtalk-bot
-          image: dantesfoncake/techtalk_bot
+          image: dantesfoncake/techtalk_bot:latest
           imagePullPolicy: Never
           env:
             - name: TelegramToken
