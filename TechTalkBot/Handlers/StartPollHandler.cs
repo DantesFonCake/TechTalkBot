@@ -93,5 +93,17 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
         return chatState;
     }
 
-    private static string CreateOption(Video video, int idx) => $"{idx + 1}. {video.Name} - {video.Url}";
+    private static string CreateOption(Video video, int idx)
+    {
+        var idxPrefix = $"{idx + 1}. ";
+        var urlSuffix = $" - {video.Url}";
+
+        var leftSpace = 100 - idxPrefix.Length - urlSuffix.Length;
+        var name = video.Name;
+        if (leftSpace < name.Length)
+        {
+            name = $"{name[..(leftSpace - 3)]}...";
+        }
+        return $"{idxPrefix}{name}{urlSuffix}";
+    }
 }
