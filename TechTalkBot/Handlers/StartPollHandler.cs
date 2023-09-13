@@ -97,10 +97,14 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
     {
         var idxPrefix = $"{idx + 1}. ";
         var urlSuffix = $" - {video.Url}";
+        var suffixLength = Encoding.UTF8.GetByteCount(urlSuffix);
         if (urlSuffix.Length > 50)
+        {
             urlSuffix = "";
+            suffixLength = 0;
+        }
 
-        var leftSpace = 100 - idxPrefix.Length - urlSuffix.Length;
+        var leftSpace = 100 - Encoding.UTF8.GetByteCount(idxPrefix) - suffixLength;
         var name = MakeFitInSpace(video.Name, leftSpace);
         return $"{idxPrefix}{name}{urlSuffix}";
     }
