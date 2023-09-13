@@ -1,21 +1,26 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TechTalkBot.Commands;
 using TechTalkBot.Database;
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types.Enums;
+using Poll = Telegram.Bot.Types.Poll;
 
 namespace TechTalkBot.Handlers;
 
-public sealed class EndPollHandlers : IRequestHandler<EndPollRequest>
+public sealed class EndPollHandler : IRequestHandler<EndPollRequest>
 {
     private readonly AppDbContext dbContext;
     private readonly ITelegramBotClient bot;
+    private readonly ILogger<EndPollHandler> logger;
 
-    public EndPollHandlers(AppDbContext dbContext, ITelegramBotClient bot)
+    public EndPollHandler(AppDbContext dbContext, ITelegramBotClient bot, ILogger<EndPollHandler> logger)
     {
         this.dbContext = dbContext;
         this.bot = bot;
+        this.logger = logger;
     }
 
     public async Task Handle(EndPollRequest request, CancellationToken cancellationToken)
@@ -31,7 +36,17 @@ public sealed class EndPollHandlers : IRequestHandler<EndPollRequest>
             return;
         }
 
-        var realPoll = await bot.StopPollAsync(request.ChatId, poll.Id, cancellationToken: cancellationToken);
+        var realPoll = await TryStopPollAsync(request, cancellationToken, poll);
+        if (realPoll is null)
+        {
+            await bot.SendTextMessageAsync(request.ChatId,
+                "Что-то пошло не так во время остановки голосования - придётся смотреть победителя самостоятельно",
+                replyToMessageId: request.MessageId, cancellationToken: cancellationToken);
+            chatState.ActivePoll = null;
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
         var maxVoters = realPoll.Options.Max(x => x.VoterCount);
         var maxVotedOptions = realPoll.Options.Where(option => option.VoterCount == maxVoters)
             .ToArray();
@@ -40,7 +55,8 @@ public sealed class EndPollHandlers : IRequestHandler<EndPollRequest>
         var videoOptionId = ExtractOptionId(maxVotedOption.Text);
         var winnerVideo = poll.Options[videoOptionId];
 
-        await bot.SendTextMessageAsync(request.ChatId, CreateWinnerVideo(winnerVideo), replyToMessageId: poll.Id, parseMode: ParseMode.MarkdownV2,
+        await bot.SendTextMessageAsync(request.ChatId, CreateWinnerVideo(winnerVideo), replyToMessageId: poll.Id,
+            parseMode: ParseMode.MarkdownV2,
             cancellationToken: cancellationToken);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -49,6 +65,21 @@ public sealed class EndPollHandlers : IRequestHandler<EndPollRequest>
         chatState.ActivePoll = null;
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+    }
+
+    private async Task<Poll?> TryStopPollAsync(EndPollRequest request, CancellationToken cancellationToken,
+        Database.Poll poll)
+    {
+        try
+        {
+            return await bot.StopPollAsync(request.ChatId, poll.Id, cancellationToken: cancellationToken);
+        }
+        catch (ApiRequestException e) when (e.Message.Contains("poll has already been closed"))
+        {
+            logger.LogWarning("Poll {PollId} was previously closed", poll.Id);
+        }
+
+        return null;
     }
 
     private string CreateWinnerVideo(Video video) => $"В этот раз смотрим [{video.Name}]({video.Url})";
