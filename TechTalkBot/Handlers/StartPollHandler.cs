@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using System.Text;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TechTalkBot.Commands;
 using TechTalkBot.Database;
@@ -21,6 +22,7 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
 
     public async Task Handle(StartPollRequest request, CancellationToken cancellationToken)
     {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var chatState = await GetOrCreateChat(request, cancellationToken);
         if (chatState is { ActivePoll: not null })
         {
@@ -63,8 +65,6 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
             Options = videos,
         };
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-
         await dbContext.AddAsync(poll, cancellationToken);
         chatState.ActivePoll = poll;
         foreach (var video in videos)
@@ -97,13 +97,22 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
     {
         var idxPrefix = $"{idx + 1}. ";
         var urlSuffix = $" - {video.Url}";
+        if (urlSuffix.Length > 50)
+            urlSuffix = "";
 
         var leftSpace = 100 - idxPrefix.Length - urlSuffix.Length;
-        var name = video.Name;
-        if (leftSpace < name.Length)
-        {
-            name = $"{name[..(leftSpace - 3)]}...";
-        }
+        var name = MakeFitInSpace(video.Name, leftSpace);
         return $"{idxPrefix}{name}{urlSuffix}";
+    }
+
+    private static string MakeFitInSpace(string videoName, int leftSpace)
+    {
+        var videoSpan = videoName.AsSpan();
+        while (leftSpace < Encoding.UTF8.GetByteCount(videoSpan))
+        {
+            videoSpan = videoSpan[..^1];
+        }
+
+        return videoSpan.ToString();
     }
 }
