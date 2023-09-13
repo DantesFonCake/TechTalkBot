@@ -104,7 +104,11 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
         }
 
         var leftSpace = 99 - idxPrefix.Length - urlSuffix.Length;
-        var name = video.Name[..Math.Min(leftSpace, video.Name.Length)];
+        var name = video.Name;
+        if (leftSpace < name.Length)
+        {
+            name = $"{name[..(leftSpace - 3)]}...";
+        }
         return $"{idxPrefix}{name}{urlSuffix}";
     }
 }
