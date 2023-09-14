@@ -35,8 +35,8 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
         var videos = await notWatched.Where(video => !video.WasInPoll)
             .OrderBy(_ => EF.Functions.Random())
             .Take(MaxPollOptions)
-            .ToArrayAsync(cancellationToken);
-        var remainder = MaxPollOptions - videos.Length;
+            .ToListAsync(cancellationToken);
+        var remainder = MaxPollOptions - videos.Count;
         if (remainder > 0)
         {
             var oldVideos = await notWatched.Where(video => video.WasInPoll)
@@ -44,10 +44,10 @@ public sealed class StartPollHandler : IRequestHandler<StartPollRequest>
                 .Take(remainder)
                 .ToArrayAsync(cancellationToken);
 
-            videos = videos.Concat(oldVideos).ToArray();
+            videos = videos.Concat(oldVideos).ToList();
         }
 
-        if (videos.Length < 2)
+        if (videos.Count < 2)
         {
             await bot.SendTextMessageAsync(request.ChatId, "Не достаточно видео, чтобы устроить голосование",
                 replyToMessageId: request.MessageId, cancellationToken: cancellationToken);
