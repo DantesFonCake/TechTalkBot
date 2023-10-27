@@ -20,14 +20,14 @@ public sealed class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Video>()
-            .HasKey(video => new { video.Name, video.Url });
-
         modelBuilder.Entity<Chat>()
             .Property(chat => chat.Id)
             .ValueGeneratedNever();
         modelBuilder.Entity<Poll>()
             .Property(poll => poll.Id)
             .ValueGeneratedNever();
+        modelBuilder.Entity<Poll>()
+            .HasMany<Video>(poll => poll.Options)
+            .WithMany();
     }
 }

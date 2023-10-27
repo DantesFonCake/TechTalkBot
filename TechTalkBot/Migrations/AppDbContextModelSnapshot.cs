@@ -22,6 +22,21 @@ namespace TechTalkBot.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("PollVideo", b =>
+                {
+                    b.Property<long>("OptionsId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("PollId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("OptionsId", "PollId");
+
+                    b.HasIndex("PollId");
+
+                    b.ToTable("PollVideo");
+                });
+
             modelBuilder.Entity("TechTalkBot.Database.Chat", b =>
                 {
                     b.Property<long>("Id")
@@ -48,29 +63,31 @@ namespace TechTalkBot.Migrations
                     b.Property<DateTimeOffset?>("EndedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("WinnerName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("WinnerUrl")
-                        .HasColumnType("text");
+                    b.Property<long?>("WinnerId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("WinnerName", "WinnerUrl");
+                    b.HasIndex("WinnerId");
 
                     b.ToTable("Polls");
                 });
 
             modelBuilder.Entity("TechTalkBot.Database.Video", b =>
                 {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Url")
+                        .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int?>("PollId")
-                        .HasColumnType("integer");
 
                     b.Property<bool>("WasInPoll")
                         .HasColumnType("boolean");
@@ -78,11 +95,24 @@ namespace TechTalkBot.Migrations
                     b.Property<bool>("Watched")
                         .HasColumnType("boolean");
 
-                    b.HasKey("Name", "Url");
-
-                    b.HasIndex("PollId");
+                    b.HasKey("Id");
 
                     b.ToTable("Videos");
+                });
+
+            modelBuilder.Entity("PollVideo", b =>
+                {
+                    b.HasOne("TechTalkBot.Database.Video", null)
+                        .WithMany()
+                        .HasForeignKey("OptionsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TechTalkBot.Database.Poll", null)
+                        .WithMany()
+                        .HasForeignKey("PollId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TechTalkBot.Database.Chat", b =>
@@ -98,21 +128,9 @@ namespace TechTalkBot.Migrations
                 {
                     b.HasOne("TechTalkBot.Database.Video", "Winner")
                         .WithMany()
-                        .HasForeignKey("WinnerName", "WinnerUrl");
+                        .HasForeignKey("WinnerId");
 
                     b.Navigation("Winner");
-                });
-
-            modelBuilder.Entity("TechTalkBot.Database.Video", b =>
-                {
-                    b.HasOne("TechTalkBot.Database.Poll", null)
-                        .WithMany("Options")
-                        .HasForeignKey("PollId");
-                });
-
-            modelBuilder.Entity("TechTalkBot.Database.Poll", b =>
-                {
-                    b.Navigation("Options");
                 });
 #pragma warning restore 612, 618
         }
