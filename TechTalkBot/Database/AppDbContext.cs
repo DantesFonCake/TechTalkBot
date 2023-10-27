@@ -29,5 +29,8 @@ public sealed class AppDbContext : DbContext
         modelBuilder.Entity<Poll>()
             .HasMany<Video>(poll => poll.Options)
             .WithMany();
+        modelBuilder.Entity<Video>()
+            .HasIndex(video => new { video.Url, video.Name })
+            .IsUnique();
     }
 }
